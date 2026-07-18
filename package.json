@@ -1,0 +1,9 @@
+{
+  "name": "zebra",
+  "version": "0.0.0",
+  "type": "module",
+  "dependencies": {
+    "bootstrap-icons": "^1.0.0",
+    "markdown-it": "^14.0.0"
+  }
+}
