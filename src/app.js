@@ -16,27 +16,6 @@ const state = {
   footerColor: null         // null = use the CSS default (--footer-bg)
 };
 
-// --- Default Document ---
-const WELCOME_DOCUMENT = `# Document title
-
-The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.
-
-## Heading
-
-The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.
-
-## Subheading
-
-The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.
-
-# Heading
-
-The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.
-
-## Subheading
-
-The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.`;
-
 // --- Init ---
 document.addEventListener('DOMContentLoaded', async () => {
   document.body.innerHTML = rootTemplate();
@@ -46,8 +25,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   // If the OS launched/activated the app with a file (double-click,
   // "Open With…"), a Go-side handler may have already captured it before
   // our event listener below could register. Pull it explicitly first so we
-  // never briefly show a stale cached document before swapping to it. This
-  // must never block booting the app — fall through to local storage below
+  // never briefly show a blank document before swapping to it. This must
+  // never block booting the app — fall through to a fresh document below
   // if the native adapter isn't available or the call fails for any reason.
   let pending = null;
   if (window.host && window.host.getPendingFile) {
@@ -62,7 +41,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadDocument(pending.name, pending.content);
     state.filePath = pending.path || '';
   } else {
-    loadFromStorage();
+    // A plain launch (opening the app directly, or a new window) always
+    // starts a fresh, unsaved document — never the previously open file.
+    loadNewDocument();
     render();
   }
 
@@ -86,7 +67,6 @@ function initListeners() {
     if (!name.endsWith('.md')) name += '.md';
     state.filename = name;
     e.target.value = name;
-    saveToStorage();
   });
 
   // Header action buttons (edit / save / cancel / menu)
@@ -416,11 +396,6 @@ function getDocumentText() {
   return sections.join('\n');
 }
 
-function saveToStorage() {
-  localStorage.setItem('md_editor_filename', state.filename);
-  localStorage.setItem('md_editor_sections', JSON.stringify(state.sections));
-}
-
 function applyColors() {
   const root = document.documentElement;
   if (state.headerColor) root.style.setProperty('--header-bg', state.headerColor);
@@ -458,12 +433,10 @@ function rgbToHex(color) {
   return '#' + match.slice(1, 4).map((n) => Number(n).toString(16).padStart(2, '0')).join('');
 }
 
-// Saving a section persists the whole document: the local cache always, and
-// — when the document was opened from (or already saved to) a real file —
-// the file on disk too, silently, without a save dialog.
+// Saving a section persists the whole document — when the document was
+// opened from (or already saved to) a real file — to the file on disk,
+// silently, without a save dialog.
 function persistDocument() {
-  saveToStorage();
-
   if (window.host && state.filePath) {
     window.host.save(state.filePath, state.filename, getDocumentText()).then((result) => {
       if (!result) return;
@@ -473,21 +446,12 @@ function persistDocument() {
   }
 }
 
-function loadFromStorage() {
-  const name  = localStorage.getItem('md_editor_filename');
-  const saved = localStorage.getItem('md_editor_sections');
-
-  if (name) {
-    state.filename = name;
-    document.getElementById('filename-input').value = name;
-  }
-
-  if (saved) {
-    try { state.sections = JSON.parse(saved); }
-    catch { state.sections = splitIntoSections(WELCOME_DOCUMENT); }
-  } else {
-    state.sections = splitIntoSections(WELCOME_DOCUMENT);
-  }
+// A fresh, blank, unsaved document: the first save prompts for a location.
+function loadNewDocument() {
+  state.filename = 'document.md';
+  state.filePath = '';
+  state.sections = [''];
+  document.getElementById('filename-input').value = state.filename;
 
   // By default, the trailing token section is highlighted.
   state.highlightedIndex = getPreparedSections().length - 1;
@@ -528,7 +492,6 @@ function loadDocument(name, content) {
   state.sections = splitIntoSections(content);
   state.highlightedIndex = getPreparedSections().length - 1;
   document.getElementById('filename-input').value = name;
-  saveToStorage();
   render();
 }
 
@@ -545,7 +508,6 @@ function exportDocument() {
       state.filePath = result.path;
       state.filename = result.name;
       document.getElementById('filename-input').value = result.name;
-      saveToStorage();
     });
     return;
   }
