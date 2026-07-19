@@ -40,8 +40,14 @@ built-in file-input/download behaviour.
 
 `sw.js` is a cache-first service worker covering the app shell (HTML, CSS,
 JS, icons). It's registered from `host.js` on load. Bump `CACHE_NAME` in
-`sw.js` when the app shell's file list changes, so old caches get cleared out
-on the next visit.
+`sw.js` whenever any app-shell file changes (not just the file list), so old
+caches get cleared out on the next visit.
+
+`CACHE_NAME` follows the convention `zebra-pwa-YYMMDDEE`, where `YY` is the
+two-digit year, `MM` the month, `DD` the date, and `EE` a two-digit counter
+for multiple releases on the same day (`01`, `02`, …), resetting each new
+date. For example, the second release on 19 July 2026 is
+`zebra-pwa-26071902`.
 
 ## Deployment
 

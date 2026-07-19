@@ -6,6 +6,13 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1a1a1a",
+  "launch_handler": { "client_mode": "navigate-new" },
+  "file_handlers": [
+    {
+      "action": "./index.html",
+      "accept": { "text/markdown": [".md", ".markdown"] }
+    }
+  ],
   "icons": [
     { "src": "./src/icon/icon48.png", "sizes": "48x48", "type": "image/png" },
     { "src": "./src/icon/icon144.png", "sizes": "144x144", "type": "image/png" },

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zebra-pwa-v1';
+const CACHE_NAME = 'zebra-pwa-26071901';
 const APP_SHELL = [
   './',
   './index.html',
