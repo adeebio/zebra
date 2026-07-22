@@ -2,25 +2,22 @@
    Zebra Markdown Editor — Application
    ========================================================================== */
 
-import { rootTemplate, sectionTemplate, headerActionsTemplate, menuDropdownTemplate } from './templates.js';
+import { rootTemplate, sectionTemplate, headerActionsTemplate } from './templates.js';
 
 // --- Application State ---
 const state = {
+  view: 'document',          // 'document' = editor, 'menu' = start menu (06.jpg)
   filename: 'document.md',
   filePath: '',              // Native filesystem path (set once opened/saved via an adapter)
   sections: [],             // Array of raw markdown strings, one per section
   activeSectionIndex: null, // Index of section in edit mode (null = read-only)
-  highlightedIndex: null,   // Index of section that is keyboard-highlighted
-  menuOpen: false,
-  headerColor: null,        // null = use the CSS default (--header-bg)
-  footerColor: null         // null = use the CSS default (--footer-bg)
+  highlightedIndex: null    // Index of section that is keyboard-highlighted
 };
 
 // --- Init ---
 document.addEventListener('DOMContentLoaded', async () => {
   document.body.innerHTML = rootTemplate();
   initListeners();
-  loadColors();
 
   // If the OS launched/activated the app with a file (double-click,
   // "Open With…"), a Go-side handler may have already captured it before
@@ -41,8 +38,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadDocument(pending.name, pending.content);
     state.filePath = pending.path || '';
   } else {
-    // A plain launch (opening the app directly, or a new window) always
-    // starts a fresh, unsaved document — never the previously open file.
+    // A plain launch (opening the app directly, or a new window) starts a
+    // fresh, blank document. The start menu is opened on demand from the header.
     loadNewDocument();
     render();
   }
@@ -76,28 +73,6 @@ function initListeners() {
     handleHeaderAction(btn.dataset.action);
   });
 
-  // Menu dropdown items
-  document.getElementById('menu-dropdown').addEventListener('click', (e) => {
-    const item = e.target.closest('.menu-item');
-    if (!item) return;
-    closeMenu();
-    if (item.dataset.action === 'open') openDocument();
-    else if (item.dataset.action === 'export') exportDocument();
-  });
-
-  // Menu dropdown color pickers
-  document.getElementById('menu-dropdown').addEventListener('input', (e) => {
-    if (e.target.id === 'header-color-input') {
-      state.headerColor = e.target.value;
-      applyColors();
-      saveColors();
-    } else if (e.target.id === 'footer-color-input') {
-      state.footerColor = e.target.value;
-      applyColors();
-      saveColors();
-    }
-  });
-
   // Clicks on section container (delegated)
   document.getElementById('document-sections').addEventListener('click', (e) => {
     if (e.target.closest('.section-editor')) return;
@@ -109,12 +84,8 @@ function initListeners() {
     handleSectionClick(parseInt(sectionEl.dataset.index, 10));
   });
 
-  // Clicking outside an active section saves it; clicking outside the menu closes it
+  // Clicking outside an active section saves it
   document.addEventListener('mousedown', (e) => {
-    if (state.menuOpen && !e.target.closest('.menu-dropdown') && !e.target.closest('.btn-menu')) {
-      closeMenu();
-    }
-
     if (state.activeSectionIndex === null) return;
     if (e.target.closest('.header-actions')) return;
     const activeEl = document.querySelector(
@@ -123,6 +94,15 @@ function initListeners() {
     if (activeEl && !activeEl.contains(e.target)) {
       saveActiveSection();
     }
+  });
+
+  // Start-menu actions (06.jpg)
+  document.getElementById('start-menu').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    if (btn.dataset.action === 'create-new')   createNewDocument();
+    else if (btn.dataset.action === 'open')   { closeMenu(); openDocument(); }
+    else if (btn.dataset.action === 'export') { closeMenu(); exportDocument(); }
   });
 
   // Keyboard shortcuts
@@ -141,21 +121,14 @@ function handleHeaderAction(action) {
 }
 
 function toggleMenu() {
-  state.menuOpen = !state.menuOpen;
-  renderMenu();
+  state.view = state.view === 'menu' ? 'document' : 'menu';
+  render();
 }
 
 function closeMenu() {
-  if (!state.menuOpen) return;
-  state.menuOpen = false;
-  renderMenu();
-}
-
-function renderMenu() {
-  document.getElementById('menu-dropdown').innerHTML = menuDropdownTemplate(state.menuOpen, {
-    headerColor: effectiveColor('--header-bg', state.headerColor),
-    footerColor: effectiveColor('--footer-bg', state.footerColor)
-  });
+  if (state.view !== 'menu') return;
+  state.view = 'document';
+  render();
 }
 
 // ==========================================================================
@@ -163,6 +136,11 @@ function renderMenu() {
 // ==========================================================================
 
 function handleKeydown(e) {
+  if (state.view === 'menu') {
+    if (e.key === 'Escape') { e.preventDefault(); closeMenu(); }
+    return;
+  }
+
   const isMod = e.metaKey || e.ctrlKey;
 
   // --- Editing ---
@@ -345,6 +323,17 @@ function parseMarkdown(text) {
 // ==========================================================================
 
 function render() {
+  document.body.classList.toggle('view-menu', state.view === 'menu');
+  document.body.classList.toggle('view-document', state.view !== 'menu');
+
+  if (state.view === 'menu') {
+    document.getElementById('header-actions').innerHTML = headerActionsTemplate({
+      isEditing: false,
+      isHighlighted: false
+    });
+    return;
+  }
+
   const container = document.getElementById('document-sections');
   const sections = getPreparedSections();
 
@@ -383,7 +372,6 @@ function render() {
     isEditing: state.activeSectionIndex !== null,
     isHighlighted: state.highlightedIndex !== null
   });
-  renderMenu();
 }
 
 // ==========================================================================
@@ -394,43 +382,6 @@ function getDocumentText() {
   const sections = [...state.sections];
   if (sections.length && sections[sections.length - 1].trim() === '') sections.pop();
   return sections.join('\n');
-}
-
-function applyColors() {
-  const root = document.documentElement;
-  if (state.headerColor) root.style.setProperty('--header-bg', state.headerColor);
-  else root.style.removeProperty('--header-bg');
-  if (state.footerColor) root.style.setProperty('--footer-bg', state.footerColor);
-  else root.style.removeProperty('--footer-bg');
-}
-
-function saveColors() {
-  if (state.headerColor) localStorage.setItem('md_editor_header_color', state.headerColor);
-  else localStorage.removeItem('md_editor_header_color');
-  if (state.footerColor) localStorage.setItem('md_editor_footer_color', state.footerColor);
-  else localStorage.removeItem('md_editor_footer_color');
-}
-
-function loadColors() {
-  state.headerColor = localStorage.getItem('md_editor_header_color') || null;
-  state.footerColor = localStorage.getItem('md_editor_footer_color') || null;
-  applyColors();
-}
-
-// Resolves a colour for the picker's value: the user's saved choice, or
-// else the CSS default currently in effect (so the swatch matches reality).
-function effectiveColor(varName, stateColor) {
-  if (stateColor) return stateColor;
-  const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-  return rgbToHex(value) || '#a0a0a0';
-}
-
-function rgbToHex(color) {
-  if (!color) return null;
-  if (color.startsWith('#')) return color;
-  const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!match) return null;
-  return '#' + match.slice(1, 4).map((n) => Number(n).toString(16).padStart(2, '0')).join('');
 }
 
 // Saving a section persists the whole document — when the document was
@@ -455,6 +406,13 @@ function loadNewDocument() {
 
   // By default, the trailing token section is highlighted.
   state.highlightedIndex = getPreparedSections().length - 1;
+}
+
+// Triggered from the start screen's "Create new document" button.
+function createNewDocument() {
+  loadNewDocument();
+  state.view = 'document';
+  render();
 }
 
 // ==========================================================================
@@ -487,6 +445,7 @@ function openDocument() {
 }
 
 function loadDocument(name, content) {
+  state.view = 'document';
   state.filename = name;
   state.activeSectionIndex = null;
   state.sections = splitIntoSections(content);

@@ -46,32 +46,33 @@
 
 /* --- Variables --- */
 :root {
-  --page-bg:          #F0F0F0;  /* very light grey — fills sides of viewport */
-  --doc-bg:           #bedaa1;  /* white — central document panel */
+  --page-bg:          #CCCCCC;  /* medium grey — fills sides/behind the document */
+  --doc-bg:           #FFFFFF;  /* white — central document panel */
   --text:             #111111;
-  --text-muted:       #666666;
-  --border:           #C0C0C0;  /* section-divider lines, header/footer lines */
+  --text-muted:       #999999;
+  --border:           #E5E5E5;  /* faint section-divider lines */
+  --frame-border:     #B8B8B8;  /* header/footer edge against the grey page */
 
-  --header-bg:        #F7F7F7;  /* user-customisable */
-  --footer-bg:        #F7F7F7;  /* user-customisable */
+  --header-bg:        #F3F3F3;  /* user-customisable */
+  --footer-bg:        #F3F3F3;  /* user-customisable */
 
-  /* Left margin colours */
-  --margin-default:   #D0D0D0;  /* light grey */
-  --margin-highlight: #B3D1F5;  /* pastel light blue */
+  /* Margin colours (both left and right margins) */
+  --margin-default:   #EFEFEF;  /* very light grey */
+  --margin-highlight: #A7C3F5;  /* pastel light blue */
 
   /* Section content backgrounds */
-  --content-default:  #FBFBFB;
-  --content-editable: #F7F7F7;  /* very very light grey */
+  --content-default:  #FFFFFF;
+  --content-editable: #F3F3F3;  /* very very light grey */
 
   /* Action buttons */
-  --btn-neutral-bg:    #e2e2e2;
-  --btn-neutral-border:#c4c4c4;
+  --btn-neutral-bg:    #F2F2F2;
+  --btn-neutral-border:#C4C4C4;
   --btn-neutral-icon:  #444444;
 
-  --btn-save-bg:      #a9dab0;  /* pastel green */
-  --btn-save-border:  #7fc189;
-  --btn-cancel-bg:    #f3b8c4;  /* pastel pink */
-  --btn-cancel-border:#e592a4;
+  --btn-save-bg:      #B4D8A6;  /* pastel green */
+  --btn-save-border:  #8FC286;
+  --btn-cancel-bg:    #F4CBCB;  /* pastel pink */
+  --btn-cancel-border:#E59FA4;
 
   --font-body: 'Noto Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --font-mono: 'Noto Sans Mono', "Courier New", Courier, monospace;
@@ -115,14 +116,14 @@ body {
   top: 0;
   height: var(--header-h);
   background-color: var(--header-bg);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--frame-border);
 }
 
 .editor-footer {
   bottom: 0;
   height: var(--footer-h);
   background-color: var(--footer-bg);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--frame-border);
 }
 
 .header-inner {
@@ -181,13 +182,13 @@ body {
 }
 
 .icon-btn:hover {
-  background-color: #d2d2d2;
+  background-color: #e6e6e6;
 }
 
 .icon-btn.btn-save {
   background-color: var(--btn-save-bg);
   border-color: var(--btn-save-border);
-  color: #ffffff;
+  color: #2f5d2a;
 }
 .icon-btn.btn-save:hover {
   background-color: var(--btn-save-border);
@@ -196,61 +197,94 @@ body {
 .icon-btn.btn-cancel {
   background-color: var(--btn-cancel-bg);
   border-color: var(--btn-cancel-border);
-  color: #ffffff;
+  color: #8a3b41;
 }
 .icon-btn.btn-cancel:hover {
   background-color: var(--btn-cancel-border);
 }
 
-/* --- Menu dropdown --- */
-.menu-dropdown {
-  position: absolute;
-  top: var(--header-h);
-  right: max(calc((100% - var(--doc-w)) / 2), 0px);
-  min-width: 160px;
-  background-color: var(--doc-bg);
-  border: 1px solid var(--border);
-  z-index: 110;
+/* ==========================================================================
+   View toggle — start menu vs. open document
+   ========================================================================== */
+body.view-menu .doc-spacer-top,
+body.view-menu .document-container,
+body.view-menu .doc-spacer-bottom {
+  display: none;
 }
-
-.menu-dropdown:empty {
+body.view-document .start-menu {
   display: none;
 }
 
-.menu-item {
-  padding: 10px 16px;
-  font-size: 14px;
+/* ==========================================================================
+   Start Menu (06.jpg)
+   Full-page menu on the grey page; each panel carries its own background.
+   ========================================================================== */
+.start-menu-inner {
+  width: var(--doc-w);
+  max-width: 100%;
+  margin: 0 auto;
+  padding: calc(var(--header-h) + 40px) 0 60px;
+}
+
+.start-menu-btn {
+  display: block;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 22px;
   color: var(--text);
+  background-color: var(--doc-bg);
+  border: 1px solid var(--frame-border);
+  padding: 20px;
+  text-align: center;
   cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.start-menu-btn + .start-menu-btn {
+  margin-top: 12px;
+}
+.start-menu-btn:hover {
+  background-color: #fafafa;
 }
 
-.menu-item:hover {
-  background-color: var(--page-bg);
+.start-menu-panel {
+  background-color: var(--content-editable);
+  margin-top: 40px;
+  padding: 24px 40px;
 }
 
-.menu-color-row {
+.start-menu-panel-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.start-menu-panel-body {
+  color: var(--text);
+}
+.start-menu-panel-body p {
+  margin: 0;
+}
+
+.shortcut-list {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 16px;
-  border-top: 1px solid var(--border);
+  flex-direction: column;
+  gap: 8px;
 }
-
-.menu-color-label {
+.shortcut {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 16px;
+}
+.shortcut dt {
+  flex-shrink: 0;
+  width: 130px;
+  font-family: var(--font-mono);
   font-size: 13px;
-  color: var(--text-muted);
-  cursor: pointer;
+  color: var(--text);
 }
-
-.menu-color-label input[type="color"] {
-  width: 28px;
-  height: 22px;
-  padding: 0;
-  border: 1px solid var(--btn-neutral-border);
-  cursor: pointer;
+.shortcut dd {
+  margin: 0;
+  color: var(--text-muted);
 }
 
 /* ==========================================================================

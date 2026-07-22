@@ -18,7 +18,6 @@ export function rootTemplate() {
         <input type="text" id="filename-input" class="filename-input" value="document.md" spellcheck="false">
         <div class="header-actions" id="header-actions"></div>
       </div>
-      <div class="menu-dropdown" id="menu-dropdown"></div>
     </header>
 
     <div class="doc-spacer-top"></div>
@@ -27,7 +26,42 @@ export function rootTemplate() {
     </main>
     <div class="doc-spacer-bottom"></div>
 
+    <main class="start-menu" id="start-menu">${startMenuTemplate()}</main>
+
     <footer class="editor-footer"></footer>
+  `;
+}
+
+// --- Start menu (06.jpg — opened from the header; replaces the old dropdown) ---
+
+function startMenuTemplate() {
+  return `
+    <div class="start-menu-inner">
+      <button class="start-menu-btn" data-action="create-new">Create new document</button>
+      <button class="start-menu-btn" data-action="open">Open document&hellip;</button>
+      <button class="start-menu-btn" data-action="export">Export&hellip;</button>
+
+      <section class="start-menu-panel">
+        <h2 class="start-menu-panel-title">About</h2>
+        <div class="start-menu-panel-body">
+          <p>Zebra is a simple, minimal markdown editor. A document is a stack of
+          sections &mdash; each begins with a heading &mdash; that you highlight and
+          edit one at a time.</p>
+        </div>
+      </section>
+
+      <section class="start-menu-panel">
+        <h2 class="start-menu-panel-title">Keyboard shortcuts</h2>
+        <div class="start-menu-panel-body">
+          <dl class="shortcut-list">
+            <div class="shortcut"><dt>&uarr; / &darr;</dt><dd>Highlight the nearest section, then move the highlight up or down</dd></div>
+            <div class="shortcut"><dt>Enter</dt><dd>Edit the highlighted section</dd></div>
+            <div class="shortcut"><dt>Esc</dt><dd>Stop editing, or clear the highlight</dd></div>
+            <div class="shortcut"><dt>Mod + Enter</dt><dd>Save changes (Mod is &#8984; on macOS, Ctrl elsewhere)</dd></div>
+          </dl>
+        </div>
+      </section>
+    </div>
   `;
 }
 
@@ -45,26 +79,8 @@ export function headerActionsTemplate({ isEditing, isHighlighted }) {
   } else if (isHighlighted) {
     html += iconButton('edit', 'edit', 'Edit (Enter)');
   }
-  html += iconButton('menu', 'menu', 'Menu');
+  html += iconButton('menu', 'menu', 'Start menu');
   return html;
-}
-
-export function menuDropdownTemplate(open, { headerColor, footerColor } = {}) {
-  if (!open) return '';
-  return `
-    <div class="menu-item" data-action="open">Open&hellip;</div>
-    <div class="menu-item" data-action="export">Export&hellip;</div>
-    <div class="menu-color-row">
-      <label class="menu-color-label">
-        Header
-        <input type="color" id="header-color-input" value="${headerColor}">
-      </label>
-      <label class="menu-color-label">
-        Footer
-        <input type="color" id="footer-color-input" value="${footerColor}">
-      </label>
-    </div>
-  `;
 }
 
 // --- Sections ---
